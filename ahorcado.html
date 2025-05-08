@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego del Ahorcado - Alerta Mejorada</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding-top: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container-juego {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+        }
+
+        #titulo-principal {
+            /* Estilos base del título, se ocultará con media query */
+        }
+
+        #imagen-ahorcado-contenedor {
+            text-align: center;
+        }
+
+        #imagen-ahorcado {
+            max-height: 400px; 
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 767.98px) and (orientation: portrait) {
+            body {
+                padding-top: 10px;
+            }
+            .container-juego {
+                padding: 15px;
+            }
+            #titulo-principal {
+                display: none;
+            }
+            #imagen-ahorcado {
+                max-height: 200px;
+            }
+            #palabra-oculta-contenedor {
+                font-size: 1.8em;
+                letter-spacing: 0.15em;
+            }
+            #teclado-virtual button {
+                width: 40px;
+                height: 40px;
+                font-size: 1em;
+            }
+        }
+
+        #palabra-oculta-contenedor {
+            font-size: 2.2em;
+            letter-spacing: 0.2em;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #343a40;
+            min-height: 40px;
+            word-break: break-word;
+        }
+
+        #teclado-virtual button {
+            margin: 3px;
+            width: 45px;
+            height: 45px;
+            font-size: 1.1em;
+        }
+        
+        #teclado-virtual {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 4px;
+            /* margin-bottom: 15px; Eliminamos el margen inferior aquí, se lo daremos al contenedor de alerta si es necesario */
+        }
+
+        #letras-usadas-contenedor {
+            min-height: 25px;
+            padding: 8px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #letras-usadas-contenedor span {
+            font-size: 1.1em;
+            margin: 0 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background-color: #adb5bd;
+            color: white;
+        }
+        
+        #letras-usadas-contenedor span.incorrecta {
+            background-color: #dc3545;
+            text-decoration: line-through;
+        }
+        
+        #letras-usadas-contenedor span.correcta {
+            background-color: #28a745;
+        }
+
+        /* Estilos para el mensaje de alerta reubicado */
+        #mensaje-alerta-contenedor {
+            /* Contenedor para el mensaje de alerta para controlar su espacio */
+            min-height: 60px; /* Altura mínima para evitar saltos de layout cuando la alerta no está visible */
+            display: flex; /* Para centrar la alerta si es más pequeña */
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 15px; /* Espacio entre la alerta y el teclado virtual */
+        }
+        #mensaje-alerta {
+            /* Ya no es 'fixed', se comporta como un bloque normal */
+            /* position: fixed; */ /* ELIMINADO */
+            /* top: 10px; */ /* ELIMINADO */
+            /* left: 50%; */ /* ELIMINADO */
+            /* transform: translateX(-50%); */ /* ELIMINADO */
+            /* z-index: 1050; */ /* ELIMINADO */
+            width: 100%; /* Ocupa el ancho del contenedor #mensaje-alerta-contenedor o max-width si se define */
+            max-width: 500px; /* Para que no sea excesivamente ancha en pantallas grandes */
+            text-align: center;
+        }
+
+        .seccion {
+            display: none;
+        }
+        .seccion.activa {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="container-juego">
+        <h1 id="titulo-principal" class="text-center mb-3">Juego del Ahorcado</h1>
+
+        <!-- Mensaje de alerta movido fuera de la sección de juego principal, se mostrará condicionalmente con JS -->
+        <!-- pero su estructura HTML estará aquí para ser poblada -->
+
+
+        <section id="configuracion-seccion" class="seccion activa">
+            <h2 class="h4 mb-3">Configuración del Juego</h2>
+            <p>Jugador 1: Ingresa la palabra o frase secreta. El Jugador 2 no debe verla.</p>
+            <form id="form-configuracion" autocomplete="off">
+                <div class="mb-3">
+                    <label for="palabra-secreta-input" class="form-label">Palabra o Frase Secreta:</label>
+                    <input type="password" class="form-control" id="palabra-secreta-input" value="" required pattern="[a-zA-ZñÑ\s]+" title="Solo letras (a-z, A-Z, ñ, Ñ) y espacios. Mínimo 1 letra." autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Iniciar Juego</button>
+            </form>
+        </section>
+
+        <section id="juego-seccion" class="seccion">
+            <div class="row align-items-center">
+                <div class="col-12 col-lg-5 order-lg-2" id="imagen-ahorcado-contenedor"> 
+                    <img id="imagen-ahorcado" src="1.png" alt="Estado del ahorcado" class="img-fluid">
+                </div>
+                <div class="col-12 col-lg-7 order-lg-1">
+                    <div id="palabra-oculta-contenedor" class="text-center"></div>
+                    
+                    <div class="mb-3">
+                        <h3 class="h5 text-center mt-2 mt-lg-0">Letras Usadas:</h3>
+                        <div id="letras-usadas-contenedor" class="p-2 rounded"></div>
+                    </div>
+
+                    <!-- Contenedor para el mensaje de alerta, justo antes del teclado -->
+                    <div id="mensaje-alerta-contenedor">
+                        <div id="mensaje-alerta" class="alert alert-dismissible fade show d-none" role="alert">
+                            <span id="mensaje-alerta-texto"></span>
+                            <button type="button" class="btn-close" onclick="document.getElementById('mensaje-alerta').classList.add('d-none');" aria-label="Close"></button>
+                        </div>
+                    </div>
+
+                    <div id="teclado-virtual" class="text-center"></div>
+                </div>
+            </div>
+            
+            <div id="mensaje-juego" class="alert d-none mt-3" role="alert"></div>
+            <button id="btn-reiniciar" class="btn btn-success w-100 mt-3 d-none">Jugar de Nuevo</button>
+        </section>
+    </main>
+
+    <script>
+        // Constantes y Variables del Juego
+        const MAX_ERRORES = 7; 
+
+        let palabraSecreta = '';
+        let palabraMostrada = [];
+        let letrasIntentadas = new Set();
+        let erroresCometidos = 0;
+        let estadoJuego = 'CONFIGURANDO';
+
+        // Elementos del DOM
+        const configuracionSeccion = document.getElementById('configuracion-seccion');
+        const juegoSeccion = document.getElementById('juego-seccion');
+        const formConfiguracion = document.getElementById('form-configuracion');
+        const palabraSecretaInput = document.getElementById('palabra-secreta-input');
+        
+        const imagenAhorcadoEl = document.getElementById('imagen-ahorcado');
+        const palabraOcultaContenedor = document.getElementById('palabra-oculta-contenedor');
+        const letrasUsadasContenedor = document.getElementById('letras-usadas-contenedor');
+        const tecladoVirtualEl = document.getElementById('teclado-virtual');
+        const mensajeJuegoEl = document.getElementById('mensaje-juego');
+        const btnReiniciar = document.getElementById('btn-reiniciar');
+        
+        // Referencias al mensaje de alerta y su texto
+        const mensajeAlertaContenedorEl = document.getElementById('mensaje-alerta-contenedor'); // Contenedor
+        const mensajeAlertaEl = document.getElementById('mensaje-alerta');
+        const mensajeAlertaTextoEl = document.getElementById('mensaje-alerta-texto');
+        // const tituloPrincipalEl = document.getElementById('titulo-principal'); // No se usa activamente
+
+        // Funciones
+        function mostrarMensajeAlerta(mensaje, tipo = 'warning', duracion = 3000) {
+            mensajeAlertaTextoEl.textContent = mensaje;
+            // Clases para Bootstrap y visibilidad
+            mensajeAlertaEl.className = `alert alert-${tipo} alert-dismissible fade show d-block`; 
+            // No necesitamos 'alert-custom' si ya no es fixed
+
+            // Limpiar timeout anterior si existe para evitar cierres prematuros si se muestran varias alertas rápido
+            if (mensajeAlertaEl.timeoutId) {
+                clearTimeout(mensajeAlertaEl.timeoutId);
+            }
+            
+            mensajeAlertaEl.timeoutId = setTimeout(() => {
+                mensajeAlertaEl.classList.remove('d-block');
+                mensajeAlertaEl.classList.add('d-none');
+            }, duracion);
+        }
+
+        function actualizarUI() {
+            imagenAhorcadoEl.src = `${erroresCometidos + 1}.png`;
+            imagenAhorcadoEl.alt = `Estado del ahorcado - ${erroresCometidos} errores`;
+
+            palabraOcultaContenedor.textContent = palabraMostrada.join('');
+            
+            letrasUsadasContenedor.innerHTML = '';
+            Array.from(letrasIntentadas).sort().forEach(letra => {
+                const span = document.createElement('span');
+                span.textContent = letra;
+                if (palabraSecreta.normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(letra)) {
+                    span.classList.add('correcta');
+                } else {
+                    span.classList.add('incorrecta');
+                }
+                letrasUsadasContenedor.appendChild(span);
+            });
+
+            const botonesTeclado = tecladoVirtualEl.querySelectorAll('button');
+            botonesTeclado.forEach(btn => {
+                const letraBoton = btn.dataset.letra;
+                if (letrasIntentadas.has(letraBoton)) {
+                    btn.disabled = true;
+                    if (!palabraSecreta.normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(letraBoton)) { 
+                         btn.classList.add('btn-danger');
+                         btn.classList.remove('btn-outline-primary');
+                    } else {
+                        btn.classList.add('btn-success');
+                        btn.classList.remove('btn-outline-primary');
+                    }
+                } else {
+                    btn.disabled = false;
+                    btn.classList.remove('btn-danger', 'btn-success');
+                    btn.classList.add('btn-outline-primary');
+                }
+            });
+        }
+        
+        function generarTecladoVirtual() {
+            tecladoVirtualEl.innerHTML = '';
+            const alfabeto = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
+            alfabeto.forEach(letra => {
+                const btn = document.createElement('button');
+                btn.textContent = letra;
+                btn.dataset.letra = letra;
+                btn.classList.add('btn', 'btn-outline-primary');
+                btn.addEventListener('click', () => manejarIntento(letra));
+                tecladoVirtualEl.appendChild(btn);
+            });
+        }
+
+        function iniciarPartida() {
+            const palabraOriginal = palabraSecretaInput.value;
+            const palabraIngresadaTrimmed = palabraOriginal.trim();
+            const palabraSecretaOriginalParaComparar = palabraIngresadaTrimmed.toUpperCase();
+
+            if (!palabraIngresadaTrimmed) {
+                mostrarMensajeAlerta('Por favor, ingresa una palabra o frase.', 'danger');
+                return;
+            }
+            
+            const regexValidacionLetrasEspacios = /^[A-ZÑ\s]+$/i;
+            const regexContieneLetra = /[A-ZÑ]/i;
+
+            if (!regexValidacionLetrasEspacios.test(palabraIngresadaTrimmed) || !regexContieneLetra.test(palabraIngresadaTrimmed)) {
+                 mostrarMensajeAlerta('La frase solo debe contener letras (A-Z, Ñ) y espacios, y al menos una letra.', 'danger');
+                return;
+            }
+            
+            palabraSecreta = palabraSecretaOriginalParaComparar;
+
+            palabraMostrada = palabraSecreta.split('').map(char => {
+                if (char === ' ') {
+                    return ' '; 
+                } else if (char.match(/[A-ZÑ]/i)) {
+                    return '_';
+                }
+                return char;
+            });
+
+            letrasIntentadas.clear();
+            erroresCometidos = 0;
+            estadoJuego = 'JUGANDO';
+
+            // Ocultar alerta al iniciar nueva partida
+            mensajeAlertaEl.classList.add('d-none');
+            mensajeAlertaEl.classList.remove('d-block');
+            if (mensajeAlertaEl.timeoutId) { // Limpiar timeout si estaba activo
+                clearTimeout(mensajeAlertaEl.timeoutId);
+            }
+
+
+            configuracionSeccion.classList.remove('activa');
+            configuracionSeccion.classList.add('d-none');
+            juegoSeccion.classList.remove('d-none');
+            juegoSeccion.classList.add('activa');
+            
+            mensajeJuegoEl.classList.add('d-none');
+            mensajeJuegoEl.textContent = '';
+            btnReiniciar.classList.add('d-none');
+            palabraSecretaInput.value = '';
+
+            generarTecladoVirtual();
+            actualizarUI();
+        }
+
+        function normalizarLetra(letra) {
+            return letra.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function manejarIntento(letraIntentada) {
+            if (estadoJuego !== 'JUGANDO' || letrasIntentadas.has(letraIntentada)) {
+                if(letrasIntentadas.has(letraIntentada)) mostrarMensajeAlerta(`Ya intentaste la letra '${letraIntentada}'.`, 'info');
+                return;
+            }
+
+            letrasIntentadas.add(letraIntentada);
+            let acierto = false;
+
+            const palabraSecretaArray = palabraSecreta.split('');
+            for (let i = 0; i < palabraSecretaArray.length; i++) {
+                if (normalizarLetra(palabraSecretaArray[i]) === letraIntentada) {
+                    palabraMostrada[i] = palabraSecretaArray[i];
+                    acierto = true;
+                }
+            }
+
+            if (!acierto) {
+                erroresCometidos++;
+                mostrarMensajeAlerta(`La letra '${letraIntentada}' no está. ¡Cuidado!`, 'warning', 2000);
+            } else {
+                mostrarMensajeAlerta(`¡Bien! La letra '${letraIntentada}' es correcta.`, 'success', 2000);
+            }
+
+            actualizarUI();
+            verificarEstadoJuego();
+        }
+
+        function verificarEstadoJuego() {
+            if (!palabraMostrada.includes('_')) {
+                estadoJuego = 'GANADO';
+                mensajeJuegoEl.textContent = '¡Felicidades! ¡Has adivinado la palabra/frase!';
+                mensajeJuegoEl.className = 'alert alert-success mt-3 d-block'; // Asegurar d-block
+                finalizarJuego();
+            } else if (erroresCometidos >= MAX_ERRORES) {
+                estadoJuego = 'PERDIDO';
+                mensajeJuegoEl.textContent = `¡Has perdido! La palabra/frase secreta era: ${palabraSecreta}`;
+                mensajeJuegoEl.className = 'alert alert-danger mt-3 d-block'; // Asegurar d-block
+                palabraOcultaContenedor.textContent = palabraSecreta.split('').join('');
+                finalizarJuego();
+            }
+        }
+        
+        function finalizarJuego() {
+            tecladoVirtualEl.querySelectorAll('button').forEach(btn => btn.disabled = true);
+            btnReiniciar.classList.remove('d-none');
+        }
+
+        function reiniciarJuego() {
+            juegoSeccion.classList.remove('activa');
+            juegoSeccion.classList.add('d-none');
+            configuracionSeccion.classList.remove('d-none');
+            configuracionSeccion.classList.add('activa');
+            
+            estadoJuego = 'CONFIGURANDO';
+            // Ocultar alerta al reiniciar
+            mensajeAlertaEl.classList.add('d-none');
+            mensajeAlertaEl.classList.remove('d-block');
+            if (mensajeAlertaEl.timeoutId) {
+                clearTimeout(mensajeAlertaEl.timeoutId);
+            }
+        }
+
+        // Event Listeners
+        formConfiguracion.addEventListener('submit', (e) => {
+            e.preventDefault();
+            iniciarPartida();
+        });
+
+        btnReiniciar.addEventListener('click', reiniciarJuego);
+
+       // Inicialización
+     document.addEventListener('DOMContentLoaded', () => {
+        configuracionSeccion.classList.add('activa');
+        configuracionSeccion.classList.remove('d-none');
+        juegoSeccion.classList.add('d-none');
+        juegoSeccion.classList.remove('activa');
+
+       // ¡AQUÍ! Aseguramos que el input esté vacío al cargar la página
+        if (palabraSecretaInput) { // Comprobación por si el elemento aún no está listo (aunque debería)
+           palabraSecretaInput.value = '';
+     }
+});
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>
