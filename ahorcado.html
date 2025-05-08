@@ -39,30 +39,6 @@
             margin-bottom: 1rem;
         }
         
-        @media (max-width: 767.98px) and (orientation: portrait) {
-            body {
-                padding-top: 10px;
-            }
-            .container-juego {
-                padding: 15px;
-            }
-            #titulo-principal {
-                display: none;
-            }
-            #imagen-ahorcado {
-                max-height: 200px;
-            }
-            #palabra-oculta-contenedor {
-                font-size: 1.8em;
-                letter-spacing: 0.15em;
-            }
-            #teclado-virtual button {
-                width: 40px;
-                height: 40px;
-                font-size: 1em;
-            }
-        }
-
         #palabra-oculta-contenedor {
             font-size: 2.2em;
             letter-spacing: 0.2em;
@@ -86,24 +62,32 @@
             flex-wrap: wrap;
             justify-content: center;
             gap: 4px;
-            /* margin-bottom: 15px; Eliminamos el margen inferior aquí, se lo daremos al contenedor de alerta si es necesario */
         }
 
+        /* --- INICIO: Estilos para Letras Usadas (Modificado) --- */
         #letras-usadas-contenedor {
-            min-height: 25px;
+            display: flex; /* Habilita Flexbox */
+            flex-wrap: wrap; /* Permite que los elementos hijos se muevan a la siguiente línea */
+            justify-content: center; /* Centra los spans horizontalmente dentro de cada línea */
+            /* align-items: center; Opcional, para alinear verticalmente si spans tuvieran alturas variables */
+
+            min-height: 25px; /* El contenedor crecerá si es necesario */
             padding: 8px;
             background-color: #e9ecef;
             border-radius: 5px;
             margin-bottom: 15px;
-            text-align: center;
+            /* text-align: center; Ya no es el método principal de centrado para los hijos directos (spans) */
         }
 
         #letras-usadas-contenedor span {
             font-size: 1.1em;
-            margin: 0 4px;
+            /* 2px de margen vertical (arriba/abajo), 4px de margen horizontal (izquierda/derecha).
+               Esto resulta en 4px de espacio vertical entre líneas de letras
+               y 8px de espacio horizontal entre letras en la misma línea. */
+            margin: 2px 4px; 
             padding: 2px 6px;
             border-radius: 4px;
-            background-color: #adb5bd;
+            background-color: #adb5bd; /* Color base para letras no adivinadas (aunque no se usa así) */
             color: white;
         }
         
@@ -115,26 +99,19 @@
         #letras-usadas-contenedor span.correcta {
             background-color: #28a745;
         }
+        /* --- FIN: Estilos para Letras Usadas --- */
 
-        /* Estilos para el mensaje de alerta reubicado */
         #mensaje-alerta-contenedor {
-            /* Contenedor para el mensaje de alerta para controlar su espacio */
-            min-height: 60px; /* Altura mínima para evitar saltos de layout cuando la alerta no está visible */
-            display: flex; /* Para centrar la alerta si es más pequeña */
+            min-height: 60px; 
+            display: flex; 
             justify-content: center;
             align-items: center;
             width: 100%;
-            margin-bottom: 15px; /* Espacio entre la alerta y el teclado virtual */
+            margin-bottom: 15px; 
         }
         #mensaje-alerta {
-            /* Ya no es 'fixed', se comporta como un bloque normal */
-            /* position: fixed; */ /* ELIMINADO */
-            /* top: 10px; */ /* ELIMINADO */
-            /* left: 50%; */ /* ELIMINADO */
-            /* transform: translateX(-50%); */ /* ELIMINADO */
-            /* z-index: 1050; */ /* ELIMINADO */
-            width: 100%; /* Ocupa el ancho del contenedor #mensaje-alerta-contenedor o max-width si se define */
-            max-width: 500px; /* Para que no sea excesivamente ancha en pantallas grandes */
+            width: 100%; 
+            max-width: 500px; 
             text-align: center;
         }
 
@@ -144,16 +121,59 @@
         .seccion.activa {
             display: block;
         }
+
+        /* --- INICIO: Estilos para móvil en vertical --- */
+        @media (max-width: 767.98px) and (orientation: portrait) {
+            body {
+                padding-top: 10px;
+            }
+            .container-juego {
+                padding: 15px;
+            }
+            #titulo-principal {
+                display: none;
+            }
+            #imagen-ahorcado {
+                max-height: 180px; 
+            }
+            #palabra-oculta-contenedor {
+                font-size: 1.6em; 
+                letter-spacing: 0.1em;
+                margin-bottom: 15px;
+            }
+
+            #mensaje-alerta-contenedor {
+                display: none; 
+            }
+
+            #teclado-virtual {
+                gap: 2px; 
+                margin-bottom: 10px; 
+            }
+            #teclado-virtual button {
+                width: 30px;    
+                height: 30px;   
+                font-size: 0.8em; 
+                margin: 1px;    
+                padding: 0.1rem; 
+                line-height: 1.2; 
+            }
+             #letras-usadas-contenedor { /* Ajustar margen para consistencia en móvil */
+                margin-bottom: 10px;
+            }
+            /* Nota: Los estilos de #letras-usadas-contenedor span definidos anteriormente 
+               también se aplicarán aquí. Si se necesita un tamaño de fuente o márgenes 
+               diferentes para las letras usadas específicamente en móvil, se añadirían aquí.
+               Por ahora, la solución flexbox se encarga del envolvimiento adaptable. */
+        }
+        /* --- FIN: Estilos para móvil en vertical --- */
+
     </style>
 </head>
 <body>
 
     <main class="container-juego">
         <h1 id="titulo-principal" class="text-center mb-3">Juego del Ahorcado</h1>
-
-        <!-- Mensaje de alerta movido fuera de la sección de juego principal, se mostrará condicionalmente con JS -->
-        <!-- pero su estructura HTML estará aquí para ser poblada -->
-
 
         <section id="configuracion-seccion" class="seccion activa">
             <h2 class="h4 mb-3">Configuración del Juego</h2>
@@ -180,7 +200,6 @@
                         <div id="letras-usadas-contenedor" class="p-2 rounded"></div>
                     </div>
 
-                    <!-- Contenedor para el mensaje de alerta, justo antes del teclado -->
                     <div id="mensaje-alerta-contenedor">
                         <div id="mensaje-alerta" class="alert alert-dismissible fade show d-none" role="alert">
                             <span id="mensaje-alerta-texto"></span>
@@ -220,20 +239,22 @@
         const mensajeJuegoEl = document.getElementById('mensaje-juego');
         const btnReiniciar = document.getElementById('btn-reiniciar');
         
-        // Referencias al mensaje de alerta y su texto
-        const mensajeAlertaContenedorEl = document.getElementById('mensaje-alerta-contenedor'); // Contenedor
+        const mensajeAlertaContenedorEl = document.getElementById('mensaje-alerta-contenedor');
         const mensajeAlertaEl = document.getElementById('mensaje-alerta');
         const mensajeAlertaTextoEl = document.getElementById('mensaje-alerta-texto');
-        // const tituloPrincipalEl = document.getElementById('titulo-principal'); // No se usa activamente
 
         // Funciones
         function mostrarMensajeAlerta(mensaje, tipo = 'warning', duracion = 3000) {
-            mensajeAlertaTextoEl.textContent = mensaje;
-            // Clases para Bootstrap y visibilidad
-            mensajeAlertaEl.className = `alert alert-${tipo} alert-dismissible fade show d-block`; 
-            // No necesitamos 'alert-custom' si ya no es fixed
+            // Comprobar si estamos en móvil vertical
+            const esMovilVertical = window.matchMedia("(max-width: 767.98px) and (orientation: portrait)").matches;
 
-            // Limpiar timeout anterior si existe para evitar cierres prematuros si se muestran varias alertas rápido
+            if (esMovilVertical) {
+                return; // Salimos de la función para no mostrar la alerta.
+            }
+
+            mensajeAlertaTextoEl.textContent = mensaje;
+            mensajeAlertaEl.className = `alert alert-${tipo} alert-dismissible fade show d-block`; 
+
             if (mensajeAlertaEl.timeoutId) {
                 clearTimeout(mensajeAlertaEl.timeoutId);
             }
@@ -328,13 +349,11 @@
             erroresCometidos = 0;
             estadoJuego = 'JUGANDO';
 
-            // Ocultar alerta al iniciar nueva partida
             mensajeAlertaEl.classList.add('d-none');
             mensajeAlertaEl.classList.remove('d-block');
-            if (mensajeAlertaEl.timeoutId) { // Limpiar timeout si estaba activo
+            if (mensajeAlertaEl.timeoutId) { 
                 clearTimeout(mensajeAlertaEl.timeoutId);
             }
-
 
             configuracionSeccion.classList.remove('activa');
             configuracionSeccion.classList.add('d-none');
@@ -386,12 +405,12 @@
             if (!palabraMostrada.includes('_')) {
                 estadoJuego = 'GANADO';
                 mensajeJuegoEl.textContent = '¡Felicidades! ¡Has adivinado la palabra/frase!';
-                mensajeJuegoEl.className = 'alert alert-success mt-3 d-block'; // Asegurar d-block
+                mensajeJuegoEl.className = 'alert alert-success mt-3 d-block';
                 finalizarJuego();
             } else if (erroresCometidos >= MAX_ERRORES) {
                 estadoJuego = 'PERDIDO';
                 mensajeJuegoEl.textContent = `¡Has perdido! La palabra/frase secreta era: ${palabraSecreta}`;
-                mensajeJuegoEl.className = 'alert alert-danger mt-3 d-block'; // Asegurar d-block
+                mensajeJuegoEl.className = 'alert alert-danger mt-3 d-block';
                 palabraOcultaContenedor.textContent = palabraSecreta.split('').join('');
                 finalizarJuego();
             }
@@ -409,7 +428,6 @@
             configuracionSeccion.classList.add('activa');
             
             estadoJuego = 'CONFIGURANDO';
-            // Ocultar alerta al reiniciar
             mensajeAlertaEl.classList.add('d-none');
             mensajeAlertaEl.classList.remove('d-block');
             if (mensajeAlertaEl.timeoutId) {
@@ -425,19 +443,15 @@
 
         btnReiniciar.addEventListener('click', reiniciarJuego);
 
-       // Inicialización
-     document.addEventListener('DOMContentLoaded', () => {
-        configuracionSeccion.classList.add('activa');
-        configuracionSeccion.classList.remove('d-none');
-        juegoSeccion.classList.add('d-none');
-        juegoSeccion.classList.remove('activa');
-
-       // ¡AQUÍ! Aseguramos que el input esté vacío al cargar la página
-        if (palabraSecretaInput) { // Comprobación por si el elemento aún no está listo (aunque debería)
-           palabraSecretaInput.value = '';
-     }
-});
-
+        document.addEventListener('DOMContentLoaded', () => {
+            configuracionSeccion.classList.add('activa');
+            configuracionSeccion.classList.remove('d-none');
+            juegoSeccion.classList.add('d-none');
+            juegoSeccion.classList.remove('activa');
+            if (palabraSecretaInput) {
+               palabraSecretaInput.value = '';
+            }
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
